@@ -5,14 +5,12 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![MinIO](https://img.shields.io/badge/MinIO-S3_Campatible-C72E49?style=for-the-badge&logo=minio&logoColor=white)](https://min.io/)
 [![WSL2](https://img.shields.io/badge/WSL2-Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://ubuntu.com/wsl)
+
 **Статус проекта:** Production Ready
 **Оркестрация:** Apache Airflow 2.8.1
 **Хранилище сырых данных:** MinIO (S3-совместимое)
 **База данных:** PostgreSQL 15
 **Конечная точка доставки:** Excel Reports в MinIO + PostgreSQL Data Mart
-
-
-**Статус проекта:** Production Ready  
 
 ---
 [ О проекте](#о-проекте) •
