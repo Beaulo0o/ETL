@@ -88,12 +88,10 @@ def reporting_daily_dag() -> None:
             workbook = writer.book
             worksheet = writer.sheets["Sales_Weather"]
 
-            # Формат для денежных значений
             money_format = workbook.add_format({"num_format": "#,##0.00 ₽"})
-            worksheet.set_column("D:D", 15, money_format)  # total_sales
-            worksheet.set_column("H:H", 15, money_format)  # avg_receipt
+            worksheet.set_column("D:D", 15, money_format)  
+            worksheet.set_column("H:H", 15, money_format)  
 
-            # Автофильтр
             worksheet.autofilter(0, 0, 0, len(df.columns) - 1)
 
         output.seek(0)
@@ -130,11 +128,11 @@ def reporting_daily_dag() -> None:
         """
         if export_result.get("status") == "success":
             message = f"""
-            ✅ Ежедневный отчет готов!
+            ✅Ежедневный отчет готов!
 
-            📅 Дата: {export_result.get('date')}
-            📊 Количество строк: {export_result.get('row_count')}
-            📁 Файл: {export_result.get('file_url')}
+            📅Дата: {export_result.get('date')}
+            📊Количество строк: {export_result.get('row_count')}
+            📁Файл: {export_result.get('file_url')}
 
             Отчет доступен для скачивания из S3.
             """
@@ -142,7 +140,6 @@ def reporting_daily_dag() -> None:
         else:
             logger.warning(f"Отчет не сформирован: {export_result}")
 
-    # Поток задач
     report_df = generate_sales_report()
     export_info = export_to_excel_s3(df=report_df, logical_date="{{ ds }}")
     send_notification(export_result=export_info)
