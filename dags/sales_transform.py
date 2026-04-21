@@ -71,14 +71,11 @@ def sales_transform_dag() -> None:
 
         df_clean = df.copy()
 
-        # Очистка данных
         df_clean["quantity"] = df_clean["quantity"].clip(lower=0)
         df_clean["unit_price"] = df_clean["unit_price"].clip(lower=0)
 
-        # Расчетные поля
         df_clean["total_amount"] = df_clean["quantity"] * df_clean["unit_price"]
 
-        # Аудит колонки
         df_clean["etl_created_at"] = pendulum.now("UTC").to_iso8601_string()
         df_clean["etl_source"] = "airflow_sales_transform"
         df_clean["etl_batch_id"] = "{{ run_id }}"
@@ -200,7 +197,6 @@ def sales_transform_dag() -> None:
 
         return results
 
-    # Определение потока данных
     staging_df = extract_staging_sales(logical_date="{{ ds }}")
     ods_df = transform_to_ods(df=staging_df)
 
@@ -208,7 +204,6 @@ def sales_transform_dag() -> None:
     mart_task = refresh_sales_mart()
     dq_task = run_data_quality_checks()
 
-    # Зависимости
     load_task >> mart_task >> dq_task
 
 
