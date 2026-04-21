@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Генератор синтетических данных о продажах для тестирования ETL пайплайна.
 """
@@ -59,7 +58,6 @@ class SalesDataGenerator:
         """
         transactions = []
 
-        # Определение дня недели (влияет на количество покупок)
         is_weekend = date.weekday() >= 5
 
         # Определяем максимальный час (чтобы не генерить будущее)
@@ -89,7 +87,7 @@ class SalesDataGenerator:
                 hour=hour,
                 minute=random.randint(0, 59),
                 second=random.randint(0, 59),
-                tzinfo=None  # без часового пояса, будет как UTC
+                tzinfo=None 
             )
 
             for _ in range(items_count):
@@ -158,7 +156,6 @@ class SalesDataGenerator:
                     prob = 0.005
                 probs.append(prob)
 
-        # Обрезаем до max_hour (от 8 до max_hour)
         probs = probs[8:max_hour + 1]
 
         # Нормализация
@@ -253,11 +250,11 @@ def main():
 
     all_data = []
 
-    logger.info(f"🚀 Генерация данных за {args.days} дней, начиная с {start_date.date()}")
+    logger.info(f" Генерация данных за {args.days} дней, начиная с {start_date.date()}")
 
     for i in range(args.days):
         current_date = start_date + timedelta(days=i)
-        logger.info(f"📅 Генерация данных за {current_date.date()}")
+        logger.info(f" Генерация данных за {current_date.date()}")
 
         df = generator.generate_transactions(
             date=current_date,
@@ -274,12 +271,10 @@ def main():
 
     logger.info(f"✅ Всего сгенерировано {len(full_df)} записей")
 
-    # Сохраняем в CSV если нужно
     if args.output:
         full_df.to_csv(args.output, index=False)
         logger.info(f"📁 Данные сохранены в {args.output}")
 
-    # Статистика
     logger.info("\n📊 Статистика:")
     logger.info(f"   - Всего транзакций: {full_df['transaction_id'].nunique()}")
     logger.info(f"   - Всего позиций: {len(full_df)}")
