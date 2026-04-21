@@ -13,7 +13,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Константы для DAG
 DEFAULT_ARGS = {
     "owner": "data_team",
     "depends_on_past": False,
@@ -140,7 +139,5 @@ def weather_ingestion_dag() -> None:
         print(f"✅ Загружено {len(weather_data)} записей в staging.weather_raw")
     raw_data = extract_weather_data(cities=CITIES, logical_date="{{ ds }}")
     save_raw_to_s3(weather_data=raw_data)
-    load_weather_to_postgres(weather_data=raw_data)  # ← добавить эту строку
-
-# Создание экземпляра DAG
+    load_weather_to_postgres(weather_data=raw_data) 
 weather_ingestion_dag()
