@@ -14,7 +14,6 @@ WITH store_metrics AS (
         SUM(total_transactions) AS monthly_transactions,
         AVG(avg_receipt) AS avg_monthly_receipt,
         AVG(unique_products_sold) AS avg_unique_products,
-        -- Погодные факторы
         AVG(avg_temperature_c) AS avg_monthly_temp,
         SUM(precipitation_mm) AS total_precipitation,
         COUNT(DISTINCT weather_condition) AS weather_variety_days,
@@ -39,16 +38,13 @@ WITH store_metrics AS (
 performance_comparison AS (
     SELECT
         sm.*,
-        -- Сравнение с предыдущим месяцем
         LAG(monthly_sales) OVER (
             PARTITION BY store_id
             ORDER BY month
         ) AS prev_month_sales,
-        -- Сравнение со средним по городу
         AVG(monthly_sales) OVER (
             PARTITION BY city_name, month
         ) AS city_avg_sales,
-        -- Процент от лидера в городе
         ROUND(
             monthly_sales * 100.0 / FIRST_VALUE(monthly_sales) OVER (
                 PARTITION BY city_name, month
@@ -67,7 +63,6 @@ SELECT
     ROUND(avg_monthly_receipt, 2) AS avg_receipt_rub,
     city_rank,
     overall_rank,
-    -- Динамика
     ROUND(monthly_sales - prev_month_sales, 2) AS sales_change_mom,
     CASE
         WHEN monthly_sales > prev_month_sales THEN '📈 Рост'
@@ -76,8 +71,8 @@ SELECT
     END AS trend,
     -- Сравнение с городом
     CASE
-        WHEN monthly_sales > city_avg_sales * 1.2 THEN '⭐ Выше среднего'
-        WHEN monthly_sales < city_avg_sales * 0.8 THEN '⚠️ Ниже среднего'
+        WHEN monthly_sales > city_avg_sales * 1.2 THEN 'Выше среднего'
+        WHEN monthly_sales < city_avg_sales * 0.8 THEN 'Ниже среднего'
         ELSE '✓ В пределах нормы'
     END AS vs_city_avg,
     pct_of_city_leader || '%' AS pct_of_leader,
