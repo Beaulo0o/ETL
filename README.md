@@ -97,19 +97,19 @@ ETL/
 │ │ ├── prometheus.yml
 │ │ └── airflow_rules.yml
 │ └── grafana/provisioning/
-│ ├── dashboards/
-│ └── datasources/
+│  ├── dashboards/
+│  └── datasources/
 │
 ├── docs/ # документация и скриншоты
 │ └── images/
-│ |├── airflow_all.png
-│ |├── weather.png
-│ |├── weather_stag.png
-│ |├── term_stag.png
-│ |├── MinIO.png
-│ |├── MinIO_reports.png
-│ |├── excel.png
-│ |└── docker.png
+│  ├── airflow_all.png
+│  ├── weather.png
+│  ├── weather_stag.png
+│  ├── term_stag.png
+│  ├── MinIO.png
+│  ├── MinIO_reports.png
+│  ├── excel.png
+│  └── docker.png
 │
 ├── .env.example # шаблон переменных окружения
 ├── .gitignore # исключения для git
