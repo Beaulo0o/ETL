@@ -28,7 +28,6 @@ weather_impact_analysis AS (
         avg_temperature,
         days_count,
         temp_sales_correlation,
-        -- Категоризация влияния погоды
         CASE
             WHEN temp_sales_correlation > 0.5 THEN 'Сильная положительная корреляция'
             WHEN temp_sales_correlation > 0.2 THEN 'Умеренная положительная корреляция'
@@ -37,7 +36,7 @@ weather_impact_analysis AS (
             ELSE 'Слабая корреляция'
         END AS correlation_strength
     FROM sales_weather_stats
-    WHERE days_count >= 5  -- Минимум 5 дней для статистической значимости
+    WHERE days_count >= 5  
 )
 SELECT
     city_name,
@@ -49,7 +48,6 @@ SELECT
     days_count,
     ROUND(temp_sales_correlation, 3) AS temp_sales_correlation,
     correlation_strength,
-    -- Рекомендации на основе корреляции
     CASE
         WHEN temp_sales_correlation > 0.3 AND weather_condition = 'Clear' THEN 'Увеличить запасы в солнечные дни'
         WHEN temp_sales_correlation < -0.3 AND weather_condition = 'Rain' THEN 'Сократить заказы скоропортящихся товаров'
