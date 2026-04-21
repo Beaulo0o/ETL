@@ -1,0 +1,31 @@
+FROM apache/airflow:2.8.1-python3.11
+
+USER root
+
+# Установка системных зависимостей
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        git \
+        curl \
+        vim \
+        postgresql-client \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+USER airflow
+
+# Копирование requirements
+COPY requirements.txt /requirements.txt
+
+# Установка Python пакетов
+RUN pip install --no-cache-dir -r /requirements.txt
+
+# Установка провайдеров Airflow
+RUN pip install --no-cache-dir \
+    apache-airflow-providers-postgres==5.10.2 \
+    apache-airflow-providers-amazon==8.18.0 \
+    apache-airflow-providers-http==4.9.0
+
+WORKDIR /opt/airflow

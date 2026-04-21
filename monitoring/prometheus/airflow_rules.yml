@@ -1,0 +1,107 @@
+# airflow_rules.yml - Правила алертов для Airflow
+groups:
+  - name: airflow_alerts
+    interval: 30s
+    rules:
+      - alert: AirflowDAGFailure
+        expr: |
+          increase(airflow_dagrun_failed_count[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: airflow
+        annotations:
+          summary: "DAG {{ $labels.dag_id }} failed"
+          description: "DAG {{ $labels.dag_id }} has failed {{ $value }} times in the last 5 minutes"
+
+      - alert: AirflowTaskFailure
+        expr: |
+          increase(airflow_task_failed_count[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: airflow
+        annotations:
+          summary: "Task failures detected"
+          description: "{{ $value }} task failures in the last 5 minutes"
+
+      - alert: AirflowSchedulerHeartbeat
+        expr: |
+          time() - airflow_scheduler_heartbeat > 300
+        for: 2m
+        labels:
+          severity: critical
+          service: airflow
+        annotations:
+          summary: "Airflow Scheduler not heartbeating"
+          description: "Scheduler has not sent heartbeat for {{ $value }} seconds"
+
+      - alert: AirflowWorkerDown
+        expr: |
+          airflow_worker_online == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: airflow
+        annotations:
+          summary: "Airflow Worker is down"
+          description: "Worker {{ $labels.hostname }} is offline"
+
+      - alert: DAGRuntimeTooLong
+        expr: |
+          airflow_dagrun_duration_seconds > 3600
+        labels:
+          severity: warning
+          service: airflow
+        annotations:
+          summary: "DAG {{ $labels.dag_id }} running too long"
+          description: "DAG runtime is {{ $value }} seconds (> 1 hour)"
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      - alert: PostgreSQLDown
+        expr: |
+          pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance is not reachable"
+
+      - alert: PostgreSQLHighConnections
+        expr: |
+          pg_stat_database_numbackends > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: postgresql
+        annotations:
+          summary: "High number of PostgreSQL connections"
+          description: "{{ $value }} active connections"
+
+  - name: etl_alerts
+    interval: 1m
+    rules:
+      - alert: DataQualityCheckFailed
+        expr: |
+          increase(data_quality_checks_failed_total[10m]) > 0
+        labels:
+          severity: warning
+          service: etl
+        annotations:
+          summary: "Data quality check failed"
+          description: "{{ $value }} checks failed in last 10 minutes"
+
+      - alert: NoDataIngested
+        expr: |
+          increase(records_ingested_total[24h]) == 0
+        for: 1h
+        labels:
+          severity: warning
+          service: etl
+        annotations:
+          summary: "No data ingested in 24 hours"
+          description: "Check data sources and ingestion pipeline"

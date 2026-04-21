@@ -1,0 +1,231 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  AIRFLOW_HOME: ${{ github.workspace }}
+
+jobs:
+  lint-python:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install black flake8 isort
+
+      - name: Check formatting with Black
+        run: black --check --diff dags/ plugins/ tests/ scripts/
+
+      - name: Lint with Flake8
+        run: flake8 dags/ plugins/ tests/ scripts/ --max-line-length=100 --extend-ignore=E203,W503 --count --statistics
+
+      - name: Check imports with isort
+        run: isort --check-only --diff dags/ plugins/ tests/ scripts/
+
+  lint-sql:
+    name: Lint SQL Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install SQLFluff
+        run: pip install sqlfluff
+
+      - name: Lint SQL files
+        run: sqlfluff lint sql/ --dialect postgres
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: airflow
+          POSTGRES_PASSWORD: airflow
+          POSTGRES_DB: airflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Set up Airflow environment
+        run: |
+          export AIRFLOW__CORE__UNIT_TEST_MODE=True
+          export AIRFLOW__CORE__LOAD_EXAMPLES=False
+          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@localhost:5432/airflow
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ \
+            --cov=dags \
+            --cov=plugins \
+            --cov-report=xml \
+            --cov-report=html \
+            -v
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  dag-integrity:
+    name: Check DAG Integrity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Airflow
+        run: |
+          pip install apache-airflow==2.8.1
+          pip install apache-airflow-providers-postgres
+          pip install apache-airflow-providers-amazon
+
+      - name: Check DAG import
+        run: |
+          python -c "
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path.cwd()))
+          sys.path.insert(0, str(Path.cwd() / 'dags'))
+          sys.path.insert(0, str(Path.cwd() / 'plugins'))
+          
+          from airflow.models import DagBag
+          import os
+          os.environ['AIRFLOW__CORE__UNIT_TEST_MODE'] = 'True'
+          
+          dag_bag = DagBag(dag_folder='dags/', include_examples=False)
+          
+          if dag_bag.import_errors:
+              print('❌ DAG import errors found:')
+              for dag_file, error in dag_bag.import_errors.items():
+                  print(f'  {dag_file}: {error}')
+              sys.exit(1)
+          
+          print(f'✅ Successfully imported {len(dag_bag.dags)} DAGs')
+          for dag_id in dag_bag.dags.keys():
+              print(f'  - {dag_id}')
+          "
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint-python, lint-sql, test, dag-integrity]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infrastructure/Dockerfile.airflow
+          push: false
+          tags: retail-etl-airflow:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run --rm retail-etl-airflow:latest python -c "from airflow.models import DagBag; print('Docker image works!')"

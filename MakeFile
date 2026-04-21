@@ -1,0 +1,96 @@
+.PHONY: help up down build clean test lint format init logs shell docs
+
+help: ## Показать справку по командам
+	@echo "Доступные команды:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+up: ## Запустить все сервисы
+	docker-compose -f infrastructure/docker-compose.yaml up -d
+	@echo "⏳ Ожидание готовности Airflow..."
+	@sleep 10
+	@echo "✅ Airflow доступен по адресу: http://localhost:8080"
+	@echo "   Логин: admin / Пароль: admin"
+	@echo "📊 MinIO Console: http://localhost:9001 (minioadmin/minioadmin)"
+	@echo "📈 Grafana: http://localhost:3000 (admin/admin)"
+
+down: ## Остановить все сервисы
+	docker-compose -f infrastructure/docker-compose.yaml down
+
+build: ## Собрать Docker образы
+	docker-compose -f infrastructure/docker-compose.yaml build
+
+clean: ## Очистить все контейнеры, волюмы и кэш
+	docker-compose -f infrastructure/docker-compose.yaml down -v
+	docker system prune -f
+	rm -rf logs/*
+	rm -rf .pytest_cache
+	rm -rf .mypy_cache
+	rm -rf __pycache__
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+test: ## Запустить тесты
+	@echo "🧪 Запуск тестов..."
+	docker-compose -f infrastructure/docker-compose.yaml run --rm airflow-worker pytest tests/ -v --tb=short
+
+test-cov: ## Запустить тесты с coverage отчетом
+	docker-compose -f infrastructure/docker-compose.yaml run --rm airflow-worker pytest tests/ --cov=dags --cov=plugins --cov-report=html --cov-report=term
+
+lint: ## Проверить код линтерами
+	@echo "🔍 Проверка Python кода..."
+	black --check dags/ plugins/ tests/ scripts/
+	flake8 dags/ plugins/ tests/ scripts/ --max-line-length=100 --extend-ignore=E203,W503
+	isort --check-only dags/ plugins/ tests/ scripts/
+	@echo "🔍 Проверка SQL кода..."
+	sqlfluff lint sql/ --dialect postgres
+
+format: ## Форматировать код
+	@echo "🎨 Форматирование Python кода..."
+	black dags/ plugins/ tests/ scripts/
+	isort dags/ plugins/ tests/ scripts/
+	@echo "🎨 Форматирование SQL кода..."
+	sqlfluff fix sql/ --dialect postgres
+
+init: ## Инициализировать Airflow (создать пользователя, подключения)
+	docker-compose -f infrastructure/docker-compose.yaml run --rm airflow-init
+
+logs: ## Показать логи всех сервисов
+	docker-compose -f infrastructure/docker-compose.yaml logs -f
+
+shell: ## Открыть shell в контейнере airflow
+	docker-compose -f infrastructure/docker-compose.yaml exec airflow-webserver bash
+
+db-shell: ## Открыть psql в базе данных
+	docker-compose -f infrastructure/docker-compose.yaml exec postgres psql -U airflow -d retail_db
+
+generate-data: ## Сгенерировать синтетические данные
+	docker-compose -f infrastructure/docker-compose.yaml run --rm airflow-worker python scripts/data_generator/generate_synthetic_sales.py --days 30
+
+trigger-dag: ## Триггернуть DAG (использовать: make trigger-dag DAG=weather_ingestion)
+	docker-compose -f infrastructure/docker-compose.yaml exec airflow-webserver airflow dags trigger $(DAG)
+
+list-dags: ## Показать список всех DAGов
+	docker-compose -f infrastructure/docker-compose.yaml exec airflow-webserver airflow dags list
+
+unpause-dag: ## Активировать DAG (использовать: make unpause-dag DAG=weather_ingestion)
+	docker-compose -f infrastructure/docker-compose.yaml exec airflow-webserver airflow dags unpause $(DAG)
+
+docs: ## Запустить локальный сервер документации
+	mkdocs serve
+
+docs-build: ## Собрать статическую документацию
+	mkdocs build
+
+requirements: ## Обновить requirements.txt из poetry
+	poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+install-dev: ## Установить зависимости для разработки
+	pip install -r requirements.txt
+	pip install -r requirements-dev.txt
+
+check-health: ## Проверить здоровье всех сервисов
+	@echo "🔍 Проверка PostgreSQL..."
+	@docker-compose -f infrastructure/docker-compose.yaml exec postgres pg_isready -U airflow && echo "✅ PostgreSQL OK" || echo "❌ PostgreSQL ERROR"
+	@echo "🔍 Проверка Airflow..."
+	@curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8080/health || echo "❌ Airflow ERROR"
+	@echo "🔍 Проверка MinIO..."
+	@curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:9000/minio/health/live || echo "❌ MinIO ERROR"

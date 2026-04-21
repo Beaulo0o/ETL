@@ -1,0 +1,46 @@
+# Core
+apache-airflow
+apache-airflow-providers-postgres
+apache-airflow-providers-amazon
+apache-airflow-providers-http
+
+# Data Processing
+pandas
+numpy
+openpyxl
+xlsxwriter
+
+# Database
+psycopg2-binary
+sqlalchemy
+
+# API & HTTP
+requests
+httpx
+
+# Testing
+pytest
+pytest-cov
+pytest-mock
+great-expectations
+
+# Code Quality
+black
+flake8
+isort
+pylint
+sqlfluff
+
+# Documentation
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+
+# Monitoring
+prometheus-client
+statsd
+
+# Utilities
+python-dotenv
+pyyaml
+pendulum

@@ -1,0 +1,30 @@
+# dashboards.yml - Провайдер дашбордов
+apiVersion: 1
+
+providers:
+  - name: 'Airflow'
+    orgId: 1
+    folder: 'Airflow'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/airflow
+
+  - name: 'ETL Metrics'
+    orgId: 1
+    folder: 'ETL'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/etl
+
+  - name: 'Data Quality'
+    orgId: 1
+    folder: 'Data Quality'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/data_quality
