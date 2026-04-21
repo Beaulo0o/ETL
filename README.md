@@ -1,5 +1,10 @@
 # ETL Pipeline: Sales & Weather Analytics
-
+[![Apache Airflow](https://img.shields.io/badge/Airflow-2.8.1-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![MinIO](https://img.shields.io/badge/MinIO-S3_Campatible-C72E49?style=for-the-badge&logo=minio&logoColor=white)](https://min.io/)
+[![WSL2](https://img.shields.io/badge/WSL2-Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://ubuntu.com/wsl)
 **Статус проекта:** Production Ready
 **Оркестрация:** Apache Airflow 2.8.1
 **Хранилище сырых данных:** MinIO (S3-совместимое)
