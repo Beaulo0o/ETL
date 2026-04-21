@@ -24,7 +24,7 @@ PostgreSQL 15 — основное хранилище структурирова
 
 MinIO — объектное хранилище, полностью совместимое с AWS S3 API. Используется как Data Lake для хранения сырых JSON-файлов погоды и готовых Excel-отчётов. В продакшене заменяется на S3 без изменения кода.
 
-Python 3.11 + Pandas + SQLAlchemy — язык и библиотеки для всех трансформаций. Pandas используется для очистки данных в DAGах, SQLAlchemy — для работы с PostgreSQL через Airflow Hooks.
+Python 3.11.9 + Pandas + SQLAlchemy — язык и библиотеки для всех трансформаций. Pandas используется для очистки данных в DAGах, SQLAlchemy — для работы с PostgreSQL через Airflow Hooks.
 
 Docker + Docker Compose — контейнеризация всех сервисов. Airflow (webserver, scheduler, worker), PostgreSQL, Redis (брокер для Celery), MinIO — всё поднимается одним docker-compose up. Это гарантирует идентичность окружения на любой машине.
 
