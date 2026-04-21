@@ -1,7 +1,5 @@
-#!/bin/bash
 set -e
 
-# Создаём пользователя и базу
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     DROP DATABASE IF EXISTS retail_db;
     DROP USER IF EXISTS etl_user;
@@ -10,7 +8,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     GRANT ALL PRIVILEGES ON DATABASE retail_db TO etl_user;
 EOSQL
 
-# Создаём схемы
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d retail_db <<-EOSQL
     CREATE SCHEMA IF NOT EXISTS staging AUTHORIZATION etl_user;
     CREATE SCHEMA IF NOT EXISTS ods AUTHORIZATION etl_user;
